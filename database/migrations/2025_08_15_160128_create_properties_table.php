@@ -14,13 +14,13 @@ return new class extends Migration
         Schema::create('properties', function (Blueprint $table) {
             $table->id();
             $table->string('address');
-            $table->text('postcode')->unique();
+            $table->string('postcode');
             $table->decimal('price'); //not integer
             $table->string('property_type');
             $table->date('date_sold');
             $table->timestamps();
 
-            $table->foreign('postcode')->references('postcode')->on('postcodes');
+//            $table->foreign('postcode')->references('postcode')->on('postcodes');
         });
     }
 

@@ -7,18 +7,20 @@
                 <p class="text-gray-600">Property Price Map</p>
             </div>
 
-            {{-- Year Selector --}}
+            {{-- Year Selector - VERSÃO SIMPLES --}}
             <div class="mb-6">
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Select Year
                 </label>
-                <select id="yearSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                    <option value="2024">2024</option>
-                    <option value="2023">2023</option>
-                    <option value="2022">2022</option>
-                    <option value="2021">2021</option>
-                    <option value="2020">2020</option>
-                </select>
+                <input
+                    type="number"
+                    id="yearInput"
+                    min="1995"
+                    max="2024"
+                    value="2024"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter year (1995-2024)"
+                >
             </div>
 
             {{-- Stats Card --}}

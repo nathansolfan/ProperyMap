@@ -18,7 +18,8 @@ class PropertyController extends Controller
     {
         $property = $this->propertyService->getPriceByYear();
 
-        return view('')
-
+        return view('property.map', compact('property'));
     }
+
+
 }

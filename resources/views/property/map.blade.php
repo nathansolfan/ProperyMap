@@ -1,4 +1,9 @@
-<x-layout title="Liverpool Property Map">
+html<x-layout title="Liverpool Property Map">
+    {{-- Adicionar no <head> --}}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
     <div class="h-screen flex">
         {{-- Sidebar --}}
         <div class="w-80 bg-white shadow-lg p-6">

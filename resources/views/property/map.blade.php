@@ -1,4 +1,4 @@
-html<x-layout title="Liverpool Property Map">
+<x-layout title="Liverpool Property Map">
     {{-- Adicionar no <head> --}}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -56,10 +56,16 @@ html<x-layout title="Liverpool Property Map">
             </div>
         </div>
 
-        {{-- Map Container --}}
-        <div class="flex-1 relative">
-            <div id="map" class="absolute inset-0"></div>
+{{--        --}}{{-- Map Container --}}
+{{--        <div class="flex-1 relative ">--}}
+{{--            <div id="map" style="height: 600px; width: 75%;"></div>--}}
+{{--        </div>--}}
+
+        <div class="flex-1 relative p-8">
+            <div id="map" class="rounded shadow" style="height: 500px; width: 70%; margin: 0 auto;"></div>
         </div>
+
+
     </div>
 
     {{-- JavaScript --}}

@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', function() {
 
     // Inicializar mapa centrado em Liverpool
-    const map = L.map('map').setView([53.4084, -2.9916], 11);
+    const map = L.map('map').setView([53.4084, -2.9916], 13);
 
     // Adicionar tiles (fundo do mapa)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
         L.circleMarker([area.lat, area.lng], {
             radius: 10,
             color: 'red',
+            weight: 2,
             fillOpacity: 0.7
         })
             .bindPopup(`${area.name}: £${area.price.toLocaleString()}`)

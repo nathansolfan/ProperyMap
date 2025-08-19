@@ -100,7 +100,7 @@ class PropertyService
         return [
             'properties' => $this->formatProperties($items),
             'search' => $city,
-            'count' => count($items);
+            'count' => count($items)
         ];
     }
 

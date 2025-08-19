@@ -1,73 +1,32 @@
-<x-layout title="Liverpool Property Map">
-    {{-- Adicionar no <head> --}}
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<x-layout>
+    <form method="GET" action="{{ route('property.index') }}" class="mb-4">
+        <input type="text" name="postcode" placeholder="Digite o postcode"
+               value="{{ $postcode }}" class="border p-2 rounded"/>
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">
+            Buscar
+        </button>
+    </form>
 
+    @if(empty($transactions))
+        <p class="text-red-500">Nenhuma transação encontrada para este postcode.</p>
+    @endif
 
-    <div class="h-screen flex">
-        {{-- Sidebar --}}
-        <div class="w-80 bg-white shadow-lg p-6">
-            <div class="mb-6">
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">Liverpool</h1>
-                <p class="text-gray-600">Property Price Map</p>
-            </div>
+    <div id="map" class="w-full h-[600px]"></div>
 
-            {{-- Year Selector - VERSÃO SIMPLES --}}
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Select Year
-                </label>
-                <input
-                    type="number"
-                    id="yearInput"
-                    min="1995"
-                    max="2024"
-                    value="2024"
-                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter year (1995-2024)"
-                >
-            </div>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
-            {{-- Stats Card --}}
-            <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-3">Statistics</h3>
-                <div id="stats" class="text-sm text-gray-600 space-y-2">
-                    <p>Loading...</p>
-                </div>
-            </div>
+    <script>
+        let map = L.map('map').setView([{{ $lat }}, {{ $lng }}], 13);
 
-            {{-- Legend --}}
-            <div class="bg-gray-50 rounded-lg p-4">
-                <h3 class="text-lg font-semibold text-gray-800 mb-3">Price Range</h3>
-                <div class="space-y-2 text-sm">
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
-                        <span>< £200k</span>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-yellow-500 rounded-full mr-3"></div>
-                        <span>£200k - £300k</span>
-                    </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
-                        <span>> £300k</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+        }).addTo(map);
 
-{{--        --}}{{-- Map Container --}}
-{{--        <div class="flex-1 relative ">--}}
-{{--            <div id="map" style="height: 600px; width: 75%;"></div>--}}
-{{--        </div>--}}
-
-        <div class="flex-1 relative p-8">
-            <div id="map" class="rounded shadow" style="height: 500px; width: 70%; margin: 0 auto;"></div>
-        </div>
-
-
-    </div>
-
-    {{-- JavaScript --}}
-    <script src="{{ asset('js/map.js') }}"></script>
+        // Marcador do postcode
+        L.marker([{{ $lat }}, {{ $lng }}]).addTo(map)
+            .bindPopup(`<b>{{ $postcode }}</b><br>
+Total transações: {{ count($transactions) }}`)
+            .openPopup();
+    </script>
 </x-layout>

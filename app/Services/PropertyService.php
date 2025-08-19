@@ -2,34 +2,24 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Http;
+
 class PropertyService
 {
-
-    public function liverpoolData()
+    public function getProperties($postcode = 'L1')
     {
+        $response = Http::get('https://landregistry.data.gov.uk/data/ppi/transaction-record.json', [
+            'propertyAddress.postcode' => $postcode . '*',
+            '_pageSize' => '100'
+        ]);
+
+        if (!$response->successful()){
+            return [];
+        }
+
+        $data = $response->json();
+        return $data['result']['items'] ?? [];
 
     }
-
-    public function getPriceByYear()
-    {
-        $areas = [
-            'L1' => [
-                'name' => 'City Centre',
-                'lat' => 53.4084,
-                'lng' => -2.9916,
-                'base_price' => 280000
-            ],
-            'L2' => [
-                'name' => 'Business District',
-                'lat' => 53.4094,
-                'lng' => -2.9856,
-                'base_price' => 250000
-            ]
-        ];
-
-        return $areas;
-
-    }
-
 
 }

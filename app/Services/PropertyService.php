@@ -36,14 +36,11 @@ class PropertyService
         if ($city) {
             $result = $this->searchByCity($city);
 
-            // Filtra resultados se for postcode específico
-            if (strlen($search) > 2) {
-                $result['properties'] = $this->filterByPostcode($result['properties'], $search);
-                $result['search'] = $search . " (filtered from " . $city . " area)";
-                $result['filtered'] = true;
-            } else {
-                $result['search'] = $search . " (" . $city . " area)";
-            }
+            // SEMPRE filtra para qualquer postcode (incluindo L4, M1, etc.)
+            $result['properties'] = $this->filterByPostcode($result['properties'], $search);
+            $result['search'] = $search . " (filtered from " . $city . " area)";
+            $result['filtered'] = true;
+            $result['count'] = count($result['properties']); // ← Atualiza o contador após filtrar
 
             return $result;
         }
@@ -78,19 +75,11 @@ class PropertyService
         // Remove espaços e fica só com letras/números
         $searchClean = preg_replace('/[^A-Z0-9]/', '', $searchPostcode);
 
-        // Determina quantos caracteres usar para o filtro
-        $filterLength = min(strlen($searchClean), 3);
-        if (strlen($searchClean) >= 3) {
-            $filterLength = 3; // L37 -> busca L37*
-        } else {
-            $filterLength = strlen($searchClean); // L3 -> busca L3*
-        }
-
-        $searchPrefix = substr($searchClean, 0, $filterLength);
-
-        return array_filter($properties, function($property) use ($searchPrefix) {
+        return array_filter($properties, function($property) use ($searchClean) {
             $propertyPostcode = preg_replace('/[^A-Z0-9]/', '', $property['postcode']);
-            return strpos($propertyPostcode, $searchPrefix) === 0;
+
+            // Busca exata pelos caracteres do search
+            return strpos($propertyPostcode, $searchClean) === 0;
         });
     }
 
@@ -98,7 +87,7 @@ class PropertyService
     {
         $response = Http::get('https://landregistry.data.gov.uk/data/ppi/transaction-record.json', [
             'propertyAddress.town' => strtoupper($city),
-            '_pageSize' => '100'  // Aumentei de 30 para 100!
+            '_pageSize' => '500'
         ]);
 
         if (!$response->successful()) {

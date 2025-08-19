@@ -78,9 +78,19 @@ class PropertyService
         // Remove espaços e fica só com letras/números
         $searchClean = preg_replace('/[^A-Z0-9]/', '', $searchPostcode);
 
-        return array_filter($properties, function($property) use ($searchClean) {
+        // Determina quantos caracteres usar para o filtro
+        $filterLength = min(strlen($searchClean), 3);
+        if (strlen($searchClean) >= 3) {
+            $filterLength = 3; // L37 -> busca L37*
+        } else {
+            $filterLength = strlen($searchClean); // L3 -> busca L3*
+        }
+
+        $searchPrefix = substr($searchClean, 0, $filterLength);
+
+        return array_filter($properties, function($property) use ($searchPrefix) {
             $propertyPostcode = preg_replace('/[^A-Z0-9]/', '', $property['postcode']);
-            return strpos($propertyPostcode, substr($searchClean, 0, 3)) === 0;
+            return strpos($propertyPostcode, $searchPrefix) === 0;
         });
     }
 
@@ -88,7 +98,7 @@ class PropertyService
     {
         $response = Http::get('https://landregistry.data.gov.uk/data/ppi/transaction-record.json', [
             'propertyAddress.town' => strtoupper($city),
-            '_pageSize' => '30'
+            '_pageSize' => '100'  // Aumentei de 30 para 100!
         ]);
 
         if (!$response->successful()) {

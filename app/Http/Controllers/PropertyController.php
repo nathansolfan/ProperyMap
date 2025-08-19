@@ -7,28 +7,28 @@ use Illuminate\Http\Request;
 
 class PropertyController extends Controller
 {
-
-    protected $propertyService;
-    public function __construct(PropertyService $propertyService)
+    public function index()
     {
-        $this->propertyService = $propertyService;
+        $service = new PropertyService();
+        $result = $service->getProperties('LONDON');
+
+        return view('properties.index', $result);
     }
 
-    public function index(Request $request)
+    public function search($searchTerm)
     {
-        $postcodeInput = $request->input('postcode', 'L1');
-        $data = $this->propertyService->getPriceByYear($postcodeInput);
+        $service = new PropertyService();
+        $result = $service->getProperties($searchTerm);
 
-// Descompacta para variáveis individuais
-        $transactions = $data['transactions'] ?? [];
-        $lat = $data['lat'] ?? 53.4084;
-        $lng = $data['lng'] ?? -2.9916;
-        $postcode = $data['postcode'] ?? $postcodeInput;
-
-        return view('property.map', compact('transactions', 'lat', 'lng', 'postcode'));
-
+        return view('properties.index', $result);
     }
 
+    public function searchPost(Request $request)
+    {
+        $searchTerm = $request->input('search');
+        $service = new PropertyService();
+        $result = $service->getProperties($searchTerm);
 
-
+        return view('properties.index', $result);
+    }
 }

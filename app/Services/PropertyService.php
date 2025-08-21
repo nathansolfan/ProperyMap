@@ -28,13 +28,13 @@ class PropertyService
 
         // Se é cidade conhecida, busca direto
         if ($this->isKnownCity($search)) {
-            return $this->searchByCity($search);
+            return $this->searchByCity($search, null);
         }
 
         // Se é postcode, mapeia para cidade
         $city = $this->mapPostcodeToCity($search);
         if ($city) {
-            $result = $this->searchByCity($city);
+            $result = $this->searchByCity($city, null);
 
             // SEMPRE filtra para qualquer postcode (incluindo L4, M1, etc.)
             $result['properties'] = $this->filterByPostcode($result['properties'], $search);
@@ -46,7 +46,7 @@ class PropertyService
         }
 
         // Fallback para busca direta
-        return $this->searchByCity($search);
+        return $this->searchByCity($search, null);
     }
 
     private function isKnownCity($search)
@@ -81,6 +81,13 @@ class PropertyService
             // Busca exata pelos caracteres do search
             return strpos($propertyPostcode, $searchClean) === 0;
         });
+    }
+
+    public function getPropertyByStreet($street, $city)
+    {
+        $result = $this->searchByCity($city, $street);
+        $result['search'] = "$street, $city";
+        return $result;
     }
 
     private function searchByCity($city, $street = null)

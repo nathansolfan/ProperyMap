@@ -31,4 +31,16 @@ class PropertyController extends Controller
 
         return view('properties.index', $result);
     }
+
+    public function searchByStreet(Request $request)
+    {
+        $street = $request->input('street');
+        $city = $request->input('city', 'LONDON');
+
+        $service = new PropertyService();
+        $result = $service->getPropertyByStreet($street, $city);
+
+        return view('property.index', $result);
+
+    }
 }

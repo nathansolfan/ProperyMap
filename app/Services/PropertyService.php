@@ -83,14 +83,24 @@ class PropertyService
         });
     }
 
-    private function searchByCity($city, $street)
+    private function searchByCity($city, $street = null)
     {
-        $response = Http::get('https://landregistry.data.gov.uk/data/ppi/transaction-record.json', [
-            'propertyAddress.street' => strtoupper($street),
-
+        $params = [
             'propertyAddress.town' => strtoupper($city),
             '_pageSize' => '1000'
-        ]);
+        ];
+
+        if ($street) {
+            $params['propertyAddress.street'] = strtoupper($street);
+        }
+
+        $response = Http::get('https://landregistry.data.gov.uk/data/ppi/transaction-record.json', $params);
+
+//        $response = Http::get('https://landregistry.data.gov.uk/data/ppi/transaction-record.json', [
+//            'propertyAddress.street' => strtoupper($street),
+//            'propertyAddress.town' => strtoupper($city),
+//            '_pageSize' => '1000'
+//        ]);
 
         if (!$response->successful()) {
             return ['properties' => [], 'search' => $city, 'count' => 0];

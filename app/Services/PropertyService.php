@@ -86,6 +86,8 @@ class PropertyService
     private function searchByCity($city)
     {
         $response = Http::get('https://landregistry.data.gov.uk/data/ppi/transaction-record.json', [
+            'propertyAddress.street' => strtoupper($street),
+
             'propertyAddress.town' => strtoupper($city),
             '_pageSize' => '1000'
         ]);

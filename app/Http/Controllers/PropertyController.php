@@ -38,7 +38,7 @@ class PropertyController extends Controller
         $city = $request->input('city', 'LONDON');
 
         $service = new PropertyService();
-        $result = $service->getPropertyByStreet($street, $city);
+        $result = $service->getPropertiesByStreet($street, $city);
 
         return view('property.index', $result);
 

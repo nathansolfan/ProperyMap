@@ -83,7 +83,7 @@ class PropertyService
         });
     }
 
-    public function getPropertyByStreet($street, $city)
+    public function getPropertiesByStreet($street, $city)
     {
         $result = $this->searchByCity($city, $street);
         $result['search'] = "$street, $city";

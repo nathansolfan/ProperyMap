@@ -83,7 +83,7 @@ class PropertyService
         });
     }
 
-    private function searchByCity($city)
+    private function searchByCity($city, $street)
     {
         $response = Http::get('https://landregistry.data.gov.uk/data/ppi/transaction-record.json', [
             'propertyAddress.street' => strtoupper($street),

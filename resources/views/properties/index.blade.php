@@ -93,6 +93,16 @@
 <div class="container">
     <h1>UK Property Sales</h1>
 
+    <div class="search-form">
+        <h3>🏠 Search by Street:</h3>
+        <form action="/properties/search-street" method="POST">
+            @csrf
+            <input type="text" name="street" placeholder="e.g., Windsor Road" required>
+            <input type="text" name="city" placeholder="City (default: London)" value="LONDON">
+            <button type="submit">Search Street</button>
+        </form>
+    </div>
+
     <!-- Custom Search Form -->
     <div class="search-form">
         <h3>🔍 Search by Postcode or City:</h3>

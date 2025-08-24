@@ -40,7 +40,7 @@ class PropertyController extends Controller
         $service = new PropertyService();
         $result = $service->getPropertiesByStreet($street, $city);
 
-        return view('property.index', $result);
+        return view('properties.index', $result);
 
     }
 }

@@ -75,14 +75,14 @@ class PropertyService
         return $properties;
     }
 
-    private function formatAddress($address)
-    {
-        $parts = [];
-        if (!empty($address['saon'])) $parts[] = $address['saon'];
-        if (!empty($address['paon'])) $parts[] = $address['paon'];
-        if (!empty($address['street'])) $parts[] = $address['street'];
-        return implode(' ', $parts);
-    }
+//    private function formatAddress($address)
+//    {
+//        $parts = [];
+//        if (!empty($address['saon'])) $parts[] = $address['saon'];
+//        if (!empty($address['paon'])) $parts[] = $address['paon'];
+//        if (!empty($address['street'])) $parts[] = $address['street'];
+//        return implode(' ', $parts);
+//    }
 
     private function formatDate($dateString)
     {

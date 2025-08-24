@@ -10,7 +10,7 @@ class PropertyController extends Controller
     public function index()
     {
         $service = new PropertyService();
-        $result = $service->getProperties('LONDON');
+        $result = $service->getPropertiesByStreet('', 'LONDON'); // Busca geral em Londres
 
         return view('properties.index', $result);
     }

@@ -15,6 +15,15 @@ class PropertyController extends Controller
         return view('properties.index', $result);
     }
 
+    public function index()
+    {
+        return view('properties.index', [
+            'properties' => [],
+            'search' => 'UK Property Sales',
+            'count' => 0
+        ]);
+    }
+
     public function search($searchTerm)
     {
         $service = new PropertyService();

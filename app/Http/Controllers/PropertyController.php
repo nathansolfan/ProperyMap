@@ -7,13 +7,13 @@ use Illuminate\Http\Request;
 
 class PropertyController extends Controller
 {
-    public function index()
-    {
-        $service = new PropertyService();
-        $result = $service->getPropertiesByStreet('', 'LONDON'); // Busca geral em Londres
-
-        return view('properties.index', $result);
-    }
+//    public function index()
+//    {
+//        $service = new PropertyService();
+//        $result = $service->getPropertiesByStreet('', 'LONDON'); // Busca geral em Londres
+//
+//        return view('properties.index', $result);
+//    }
 
     public function index()
     {

@@ -141,10 +141,11 @@
 
     <div class="search-links">
         <h3>Quick Search Examples:</h3>
-        <strong>Cities:</strong><br>
-        <a href="/properties/LONDON">London</a>
-        <a href="/properties/MANCHESTER">Manchester</a>
-        <a href="/properties/BIRMINGHAM">Birmingham</a><br><br>
+        <strong>Popular Postcodes:</strong><br>
+        <a href="/properties/SW1">SW1</a>
+        <a href="/properties/L4">L4</a>
+        <a href="/properties/M1">M1</a>
+        <a href="/properties/B1">B1</a>
 
         <strong>Postcodes:</strong><br>
         <a href="/properties/SW1">SW1</a>

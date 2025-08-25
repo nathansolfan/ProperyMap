@@ -151,13 +151,48 @@
     <p><strong>{{ $count ?? count($properties) }}</strong> properties found</p>
 
     @if(count($properties) > 0)
-        <!-- Sort Options -->
+        <!-- Sort Options CORRIGIDO -->
         <div class="sort-options">
             <strong>Sort By:</strong>
-            <a href="{{ url()->current() }}?sort=street_number"
-               class="{{ ($sortBy ?? 'street_number') == 'street_number' ? 'active' : '' }}">Street Number</a>
-            <a href="{{ url()->current() }}?sort=date"
-               class="{{ ($sortBy ?? '') == 'date' ? 'active' : '' }}">Date (Recent First)</a>
+            @php
+                $currentUrl = url()->current();
+                $currentSearch = request('search', $search ?? '');
+
+                // Se for uma rota GET (/properties/{search}), usar o padrão GET
+                // Se for POST, manter os formulários
+                $isGetRoute = !request()->isMethod('post');
+            @endphp
+
+            @if($isGetRoute)
+                <!-- Links GET para URLs como /properties/westminster -->
+                <a href="{{ $currentUrl }}?sort=street_number"
+                   class="{{ ($sortBy ?? 'street_number') == 'street_number' ? 'active' : '' }}">Street Number</a>
+                <a href="{{ $currentUrl }}?sort=date"
+                   class="{{ ($sortBy ?? '') == 'date' ? 'active' : '' }}">Date (Recent First)</a>
+            @else
+                <!-- Formulários POST para manter a busca -->
+                <form method="POST" action="{{ url()->current() }}" style="display: inline;">
+                    @csrf
+                    <input type="hidden" name="search" value="{{ $currentSearch }}">
+                    <input type="hidden" name="sort" value="street_number">
+                    <button type="submit"
+                            class="sort-btn {{ ($sortBy ?? 'street_number') == 'street_number' ? 'active' : '' }}"
+                            style="border: none; background: {{ ($sortBy ?? 'street_number') == 'street_number' ? '#3498db' : '#6c757d' }}; color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 15px;">
+                        Street Number
+                    </button>
+                </form>
+
+                <form method="POST" action="{{ url()->current() }}" style="display: inline;">
+                    @csrf
+                    <input type="hidden" name="search" value="{{ $currentSearch }}">
+                    <input type="hidden" name="sort" value="date">
+                    <button type="submit"
+                            class="sort-btn {{ ($sortBy ?? '') == 'date' ? 'active' : '' }}"
+                            style="border: none; background: {{ ($sortBy ?? '') == 'date' ? '#3498db' : '#6c757d' }}; color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                        Date (Recent First)
+                    </button>
+                </form>
+            @endif
         </div>
 
         @foreach($properties as $property)

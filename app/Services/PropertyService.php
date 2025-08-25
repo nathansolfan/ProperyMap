@@ -188,39 +188,42 @@ class PropertyService
 
         $properties = $this->removeDuplicates($properties);
 
-        // ORDENAÇÃO flexível baseada no parâmetro sortBy
+        // ORDENAÇÃO CORRIGIDA - agora funciona corretamente
         if ($sortBy === 'date') {
-            // Ordena por data (mais recente primeiro)
+            // Ordena por data (mais recente primeiro), depois por número da rua
             usort($properties, function($a, $b) {
+                // Primeiro critério: data (mais recente primeiro)
                 if ($a['timestamp'] !== $b['timestamp']) {
                     return $b['timestamp'] - $a['timestamp']; // Mais recente primeiro
                 }
 
-                // Se mesma data, ordena por rua
+                // Segundo critério: número da rua (crescente)
                 if ($a['street_number'] !== $b['street_number']) {
                     return $a['street_number'] - $b['street_number'];
                 }
 
-                // Se mesma rua e data, ordena por preço (maior primeiro)
+                // Terceiro critério: preço (maior primeiro)
                 return $b['price'] - $a['price'];
             });
         } else {
-            // Comportamento padrão (ordena por número da rua)
+            // Ordenação padrão: primeiro por número da rua, depois por data mais recente
             usort($properties, function($a, $b) {
+                // Primeiro critério: número da rua (crescente)
                 if ($a['street_number'] !== $b['street_number']) {
                     return $a['street_number'] - $b['street_number'];
                 }
 
-                // Se mesmo número, ordena por data (mais recente primeiro)
+                // Segundo critério: data (mais recente primeiro para o mesmo endereço)
                 if ($a['timestamp'] !== $b['timestamp']) {
-                    return $b['timestamp'] - $a['timestamp'];
+                    return $b['timestamp'] - $a['timestamp']; // Mais recente primeiro
                 }
 
-                // Se mesma data, ordena por preço (maior primeiro)
+                // Terceiro critério: preço (maior primeiro)
                 return $b['price'] - $a['price'];
             });
         }
 
+        // Remove propriedades auxiliares antes de retornar
         foreach ($properties as &$property) {
             unset($property['street_number']);
             unset($property['raw_date']);

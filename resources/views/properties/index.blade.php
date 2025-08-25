@@ -87,6 +87,32 @@
         .search-links a:hover {
             background: #2980b9;
         }
+        .sort-options {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+        .sort-options a {
+            display: inline-block;
+            margin-right: 15px;
+            padding: 8px 16px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .sort-options a.active {
+            background: #3498db;
+            font-weight: bold;
+        }
+        .sort-options a:hover {
+            background: #5a6268;
+        }
+        .sort-options a.active:hover {
+            background: #2980b9;
+        }
     </style>
 </head>
 <body>
@@ -99,6 +125,7 @@
             @csrf
             <input type="text" name="street" placeholder="e.g., Windsor Road" required>
             <input type="text" name="city" placeholder="City (default: London)" value="LONDON">
+            <input type="hidden" name="sort" value="{{ $sortBy ?? 'street_number' }}">
             <button type="submit">Search Street</button>
         </form>
     </div>
@@ -115,6 +142,7 @@
                 value="{{ request('search', $search ?? '') }}"
                 required
             >
+            <input type="hidden" name="sort" value="{{ $sortBy ?? 'street_number' }}">
             <button type="submit">Search</button>
         </form>
     </div>
@@ -123,6 +151,15 @@
     <p><strong>{{ $count ?? count($properties) }}</strong> properties found</p>
 
     @if(count($properties) > 0)
+        <!-- Sort Options -->
+        <div class="sort-options">
+            <strong>Sort By:</strong>
+            <a href="{{ request()->fullUrlWithQuery(['sort' => 'street_number']) }}"
+               class="{{ ($sortBy ?? 'street_number') == 'street_number' ? 'active' : '' }}">Street Number</a>
+            <a href="{{ request()->fullUrlWithQuery(['sort' => 'date']) }}"
+               class="{{ ($sortBy ?? '') == 'date' ? 'active' : '' }}">Date (Recent First)</a>
+        </div>
+
         @foreach($properties as $property)
             <div class="property">
                 <div class="price">£{{ number_format($property['price']) }}</div>

@@ -19,14 +19,16 @@ class PropertyController extends Controller
         return view('properties.index', [
             'properties' => [],
             'search' => 'UK Property Sales',
-            'count' => 0
+            'count' => 0,
+            'sortBy' => 'street_number'
         ]);
     }
 
     // Busca por URL (GET) - ATUALIZADO
-    public function search($searchTerm)
+    public function search($searchTerm, Request $request)
     {
-        $result = $this->propertyService->getProperties($searchTerm);
+        $sortBy = $request->query('sort', 'street_number');
+        $result = $this->propertyService->getProperties($searchTerm, $sortBy);
         return view('properties.index', $result);
     }
 
@@ -34,7 +36,8 @@ class PropertyController extends Controller
     public function searchPost(Request $request)
     {
         $searchTerm = $request->input('search');
-        $result = $this->propertyService->getProperties($searchTerm);
+        $sortBy = $request->input('sort', 'street_number');
+        $result = $this->propertyService->getProperties($searchTerm, $sortBy);
         return view('properties.index', $result);
     }
 
@@ -43,8 +46,9 @@ class PropertyController extends Controller
     {
         $street = $request->input('street');
         $city = $request->input('city', 'LONDON');
+        $sortBy = $request->input('sort', 'street_number');
 
-        $result = $this->propertyService->getPropertiesByStreet($street, $city);
+        $result = $this->propertyService->getPropertiesByStreet($street, $city, $sortBy);
         return view('properties.index', $result);
     }
 }

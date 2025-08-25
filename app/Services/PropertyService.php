@@ -172,6 +172,7 @@ class PropertyService
 
             $address = $item['propertyAddress'];
             $transactionDate = $item['transactionDate'] ?? '';
+            $timestamp = strtotime($transactionDate);
 
             $properties[] = [
                 'price' => (int) $item['pricePaid'],
@@ -180,21 +181,19 @@ class PropertyService
                 'date' => $this->formatDate($transactionDate),
                 'type' => $this->getPropertyType($item),
                 'street_number' => $this->extractStreetNumberFromFullAddress($address),
-                'raw_date' => $transactionDate
+                'raw_date' => $transactionDate,
+                'timestamp' => $timestamp ? $timestamp : 0
             ];
         }
 
         $properties = $this->removeDuplicates($properties);
 
         // ORDENAÇÃO flexível baseada no parâmetro sortBy
-        usort($properties, function($a, $b) use ($sortBy) {
-            if ($sortBy === 'date') {
-                // Ordena por data (mais recente primeiro)
-                $dateA = strtotime($a['raw_date']);
-                $dateB = strtotime($b['raw_date']);
-
-                if ($dateA !== $dateB) {
-                    return $dateB - $dateA; // Mais recente primeiro
+        if ($sortBy === 'date') {
+            // Ordena por data (mais recente primeiro)
+            usort($properties, function($a, $b) {
+                if ($a['timestamp'] !== $b['timestamp']) {
+                    return $b['timestamp'] - $a['timestamp']; // Mais recente primeiro
                 }
 
                 // Se mesma data, ordena por rua
@@ -204,28 +203,28 @@ class PropertyService
 
                 // Se mesma rua e data, ordena por preço (maior primeiro)
                 return $b['price'] - $a['price'];
-            } else {
-                // Comportamento padrão (ordena por número da rua)
+            });
+        } else {
+            // Comportamento padrão (ordena por número da rua)
+            usort($properties, function($a, $b) {
                 if ($a['street_number'] !== $b['street_number']) {
                     return $a['street_number'] - $b['street_number'];
                 }
 
                 // Se mesmo número, ordena por data (mais recente primeiro)
-                $dateA = strtotime($a['raw_date']);
-                $dateB = strtotime($b['raw_date']);
-
-                if ($dateA !== $dateB) {
-                    return $dateB - $dateA; // Mais recente primeiro
+                if ($a['timestamp'] !== $b['timestamp']) {
+                    return $b['timestamp'] - $a['timestamp'];
                 }
 
                 // Se mesma data, ordena por preço (maior primeiro)
                 return $b['price'] - $a['price'];
-            }
-        });
+            });
+        }
 
         foreach ($properties as &$property) {
             unset($property['street_number']);
             unset($property['raw_date']);
+            unset($property['timestamp']);
         }
 
         return $properties;

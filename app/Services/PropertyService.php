@@ -215,7 +215,7 @@ class PropertyService
 
                 // Segundo critério: data (mais recente primeiro para o mesmo endereço)
                 if ($a['timestamp'] !== $b['timestamp']) {
-                    return $b['timestamp'] - $a['timestamp']; // Mais recente primeiro
+                    return $a['timestamp'] - $b['timestamp']; // Mais antigo primeiro
                 }
 
                 // Terceiro critério: preço (maior primeiro)

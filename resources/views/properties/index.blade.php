@@ -154,9 +154,9 @@
         <!-- Sort Options -->
         <div class="sort-options">
             <strong>Sort By:</strong>
-            <a href="{{ request()->fullUrlWithQuery(['sort' => 'street_number']) }}"
+            <a href="{{ url()->current() }}?sort=street_number"
                class="{{ ($sortBy ?? 'street_number') == 'street_number' ? 'active' : '' }}">Street Number</a>
-            <a href="{{ request()->fullUrlWithQuery(['sort' => 'date']) }}"
+            <a href="{{ url()->current() }}?sort=date"
                class="{{ ($sortBy ?? '') == 'date' ? 'active' : '' }}">Date (Recent First)</a>
         </div>
 

@@ -94,7 +94,7 @@
             border-radius: 5px;
             border: 1px solid #e9ecef;
         }
-        .sort-options a {
+        .sort-btn {
             display: inline-block;
             margin-right: 15px;
             padding: 8px 16px;
@@ -102,15 +102,18 @@
             color: white;
             text-decoration: none;
             border-radius: 4px;
+            cursor: pointer;
+            border: none;
+            font-size: 14px;
         }
-        .sort-options a.active {
+        .sort-btn.active {
             background: #3498db;
             font-weight: bold;
         }
-        .sort-options a:hover {
+        .sort-btn:hover {
             background: #5a6268;
         }
-        .sort-options a.active:hover {
+        .sort-btn.active:hover {
             background: #2980b9;
         }
     </style>
@@ -121,20 +124,17 @@
 
     <div class="search-form">
         <h3>🏠 Search by Street:</h3>
-        <form action="/properties/search-street" method="POST">
-            @csrf
+        <form action="/properties" method="GET">
             <input type="text" name="street" placeholder="e.g., Windsor Road" required>
             <input type="text" name="city" placeholder="City (default: London)" value="LONDON">
-            <input type="hidden" name="sort" value="{{ $sortBy ?? 'street_number' }}">
+            <input type="hidden" name="sort" id="street-sort" value="{{ $sortBy ?? 'street_number' }}">
             <button type="submit">Search Street</button>
         </form>
     </div>
 
-    <!-- Custom Search Form -->
     <div class="search-form">
         <h3>🔍 Search by Postcode or City:</h3>
-        <form action="/properties/search" method="POST">
-            @csrf
+        <form action="/properties" method="GET">
             <input
                 type="text"
                 name="search"
@@ -142,7 +142,7 @@
                 value="{{ request('search', $search ?? '') }}"
                 required
             >
-            <input type="hidden" name="sort" value="{{ $sortBy ?? 'street_number' }}">
+            <input type="hidden" name="sort" id="search-sort" value="{{ $sortBy ?? 'street_number' }}">
             <button type="submit">Search</button>
         </form>
     </div>
@@ -151,61 +151,48 @@
     <p><strong>{{ $count ?? count($properties) }}</strong> properties found</p>
 
     @if(count($properties) > 0)
-        <!-- Sort Options CORRIGIDO -->
         <div class="sort-options">
             <strong>Sort By:</strong>
-            @php
-                $currentUrl = url()->current();
-                $currentSearch = request('search', $search ?? '');
-
-                // Se for uma rota GET (/properties/{search}), usar o padrão GET
-                // Se for POST, manter os formulários
-                $isGetRoute = !request()->isMethod('post');
-            @endphp
-
-            @if($isGetRoute)
-                <!-- Links GET para URLs como /properties/westminster -->
-                <a href="{{ $currentUrl }}?sort=street_number"
-                   class="{{ ($sortBy ?? 'street_number') == 'street_number' ? 'active' : '' }}">Street Number</a>
-                <a href="{{ $currentUrl }}?sort=date"
-                   class="{{ ($sortBy ?? '') == 'date' ? 'active' : '' }}">Date (Recent First)</a>
-            @else
-                <!-- Formulários POST para manter a busca -->
-                <form method="POST" action="{{ url()->current() }}" style="display: inline;">
-                    @csrf
-                    <input type="hidden" name="search" value="{{ $currentSearch }}">
-                    <input type="hidden" name="sort" value="street_number">
-                    <button type="submit"
-                            class="sort-btn {{ ($sortBy ?? 'street_number') == 'street_number' ? 'active' : '' }}"
-                            style="border: none; background: {{ ($sortBy ?? 'street_number') == 'street_number' ? '#3498db' : '#6c757d' }}; color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-right: 15px;">
-                        Street Number
-                    </button>
-                </form>
-
-                <form method="POST" action="{{ url()->current() }}" style="display: inline;">
-                    @csrf
-                    <input type="hidden" name="search" value="{{ $currentSearch }}">
-                    <input type="hidden" name="sort" value="date">
-                    <button type="submit"
-                            class="sort-btn {{ ($sortBy ?? '') == 'date' ? 'active' : '' }}"
-                            style="border: none; background: {{ ($sortBy ?? '') == 'date' ? '#3498db' : '#6c757d' }}; color: white; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
-                        Date (Recent First)
-                    </button>
-                </form>
-            @endif
+            <button class="sort-btn {{ ($sortBy ?? 'street_number') == 'street_number' ? 'active' : '' }}"
+                    onclick="sortResults('street_number')">
+                Street Number
+            </button>
+            <button class="sort-btn {{ ($sortBy ?? '') == 'date' ? 'active' : '' }}"
+                    onclick="sortResults('date')">
+                Date (Recent First)
+            </button>
         </div>
 
-        @foreach($properties as $property)
-            <div class="property">
-                <div class="price">£{{ number_format($property['price']) }}</div>
-                <div class="address"><strong>{{ $property['address'] }}</strong></div>
-                <div><strong>Postcode:</strong> <span class="postcode">{{ $property['postcode'] }}</span></div>
-                <div class="meta">
-                    <strong>Sale Date:</strong> {{ $property['date'] }} |
-                    <strong>Type:</strong> {{ $property['type'] }}
+        <div id="results-container">
+            @foreach($properties as $property)
+                <div class="property" data-address="{{ $property['address'] }}" data-price="{{ $property['price'] }}" data-date="{{ $property['date'] }}">
+                    <div class="price">£{{ number_format($property['price']) }}</div>
+                    <div class="address"><strong>{{ $property['address'] }}</strong></div>
+                    <div><strong>Postcode:</strong> <span class="postcode">{{ $property['postcode'] }}</span></div>
+                    <div class="meta">
+                        <strong>Sale Date:</strong> {{ $property['date'] }} |
+                        <strong>Type:</strong> {{ $property['type'] }}
+                    </div>
                 </div>
-            </div>
-        @endforeach
+            @endforeach
+        </div>
+
+        <script>
+            function sortResults(sortType) {
+                // Atualiza botões ativos
+                document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+                event.target.classList.add('active');
+
+                // Atualiza campos hidden
+                document.getElementById('street-sort').value = sortType;
+                document.getElementById('search-sort').value = sortType;
+
+                // Recarrega a página com nova ordenação
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.set('sort', sortType);
+                window.location.search = urlParams.toString();
+            }
+        </script>
     @else
         <p><strong>No properties found for "{{ $search }}".</strong></p>
         <p>💡 Try: specific postcodes (SW1A, E14), partial postcodes (SW1, E1), or city names (London, Manchester)</p>
@@ -214,18 +201,18 @@
     <div class="search-links">
         <h3>Quick Search Examples:</h3>
         <strong>Popular Postcodes:</strong><br>
-        <a href="/properties/SW1">SW1</a>
-        <a href="/properties/L4">L4</a>
-        <a href="/properties/M1">M1</a>
-        <a href="/properties/B1">B1</a>
+        <a href="/properties?search=SW1">SW1</a>
+        <a href="/properties?search=L4">L4</a>
+        <a href="/properties?search=M1">M1</a>
+        <a href="/properties?search=B1">B1</a>
 
         <strong>Postcodes:</strong><br>
-        <a href="/properties/SW1">SW1</a>
-        <a href="/properties/SW2">SW2</a>
-        <a href="/properties/E1">E1</a>
-        <a href="/properties/N1">N1</a>
-        <a href="/properties/L44">L44</a>
-        <a href="/properties/M1">M1</a>
+        <a href="/properties?search=SW1">SW1</a>
+        <a href="/properties?search=SW2">SW2</a>
+        <a href="/properties?search=E1">E1</a>
+        <a href="/properties?search=N1">N1</a>
+        <a href="/properties?search=L44">L44</a>
+        <a href="/properties?search=M1">M1</a>
     </div>
 </div>
 </body>

@@ -14,55 +14,32 @@ class PropertyController extends Controller
         $this->propertyService = $propertyService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        return view('properties.index', [
-            'properties' => [],
-            'search' => 'UK Property Sales',
-            'count' => 0,
-            'sortBy' => 'street_number'
-        ]);
-    }
-
-    // Busca por URL (GET) - CORRIGIDO para capturar o parâmetro sort
-    public function search($searchTerm, Request $request)
-    {
-        $sortBy = $request->input('sort', 'street_number');
-
-        $result = $this->propertyService->getProperties($searchTerm, $sortBy);
-        $result['sortBy'] = $sortBy;
-
-        return view('properties.index', $result);
-    }
-
-    // Busca por formulário (POST) - CORRIGIDO
-    public function searchPost(Request $request)
-    {
-        $searchTerm = $request->input('search');
-        $sortBy = $request->input('sort', 'street_number');
-
-        // Verificação de debug - temporariamente
-        // dd('POST searchPost:', $searchTerm, $sortBy, $request->all());
-
-        $result = $this->propertyService->getProperties($searchTerm, $sortBy);
-        $result['sortBy'] = $sortBy;
-
-        return view('properties.index', $result);
-    }
-
-    // Busca por rua (formulário específico) - CORRIGIDO
-    public function searchByStreet(Request $request)
-    {
-        $street = $request->input('street');
+        $search = $request->input('search', '');
+        $street = $request->input('street', '');
         $city = $request->input('city', 'LONDON');
         $sortBy = $request->input('sort', 'street_number');
 
-        // Verificação de debug - temporariamente
-        // dd('POST searchByStreet:', $street, $city, $sortBy, $request->all());
+        // Se não tem busca, mostra página inicial
+        if (empty($search) && empty($street)) {
+            return view('properties.index', [
+                'properties' => [],
+                'search' => 'UK Property Sales',
+                'count' => 0,
+                'sortBy' => $sortBy
+            ]);
+        }
 
-        $result = $this->propertyService->getPropertiesByStreet($street, $city, $sortBy);
+        // Se tem street, usa busca por rua
+        if (!empty($street)) {
+            $result = $this->propertyService->getPropertiesByStreet($street, $city, $sortBy);
+        } else {
+            // Senão, usa busca geral
+            $result = $this->propertyService->getProperties($search, $sortBy);
+        }
+
         $result['sortBy'] = $sortBy;
-
         return view('properties.index', $result);
     }
 }

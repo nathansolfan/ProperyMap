@@ -6,12 +6,56 @@ use Illuminate\Support\Facades\Http;
 
 class PropertyService
 {
-    // Busca por postcode
-    public function getProperties($postcode)
-    {
-        $postcode = strtoupper(trim($postcode));
+    private $apiUrl = 'https://landregistry.data.gov.uk/data/ppi/transaction-record.json';
 
-        $response = Http::get('https://landregistry.data.gov.uk/data/ppi/transaction-record.json', [
+    public function getProperties($search)
+    {
+        $search = strtoupper(trim($search));
+
+        // Verifica se é código postal ou busca geral
+        if ($this->isPostcode($search)) {
+            return $this->searchByPostcode($search);
+        } else {
+            return $this->searchByAddress($search);
+        }
+    }
+
+    public function getPropertiesByStreet($street, $city = 'LONDON')
+    {
+        // Remove números do início para buscar só a rua
+        $cleanStreet = $this->extractStreetName($street);
+
+        $response = Http::get($this->apiUrl, [
+            'propertyAddress.street' => strtoupper($cleanStreet),
+            'propertyAddress.town' => strtoupper($city),
+            '_pageSize' => '1000'
+        ]);
+
+        if (!$response->successful()) {
+            return ['properties' => [], 'search' => "$street, $city", 'count' => 0];
+        }
+
+        $data = $response->json();
+        $allProperties = $this->formatProperties($data['result']['items'] ?? []);
+
+        // Se foi pesquisado um número específico, filtra
+        $specificNumber = $this->extractStreetNumber($street);
+        if ($specificNumber && $specificNumber !== 9999) {
+            $allProperties = array_filter($allProperties, function($property) use ($specificNumber) {
+                return $this->extractStreetNumber($property['address']) === $specificNumber;
+            });
+        }
+
+        return [
+            'properties' => array_values($allProperties),
+            'search' => "$street, $city",
+            'count' => count($allProperties)
+        ];
+    }
+
+    private function searchByPostcode($postcode)
+    {
+        $response = Http::get($this->apiUrl, [
             'propertyAddress.postcode' => $postcode . '*',
             '_pageSize' => '1000'
         ]);
@@ -30,27 +74,88 @@ class PropertyService
         ];
     }
 
-    // Busca por rua
-    public function getPropertiesByStreet($street, $city = 'LONDON')
+    private function searchByAddress($search)
     {
-        $response = Http::get('https://landregistry.data.gov.uk/data/ppi/transaction-record.json', [
-            'propertyAddress.street' => strtoupper($street),
-            'propertyAddress.town' => strtoupper($city),
+        // Tenta extrair número e nome da rua
+        $streetNumber = $this->extractStreetNumber($search);
+        $streetName = $this->extractStreetName($search);
+        $city = $this->extractCity($search);
+
+        if (empty($streetName)) {
+            return ['properties' => [], 'search' => $search, 'count' => 0];
+        }
+
+        // Busca pela rua
+        $response = Http::get($this->apiUrl, [
+            'propertyAddress.street' => $streetName,
+            'propertyAddress.town' => $city ?: 'LIVERPOOL', // Default para Liverpool se não especificado
             '_pageSize' => '1000'
         ]);
 
         if (!$response->successful()) {
-            return ['properties' => [], 'search' => "$street, $city", 'count' => 0];
+            return ['properties' => [], 'search' => $search, 'count' => 0];
         }
 
         $data = $response->json();
-        $properties = $this->formatProperties($data['result']['items'] ?? []);
+        $allProperties = $this->formatProperties($data['result']['items'] ?? []);
+
+        // Se foi pesquisado um número específico, filtra
+        if ($streetNumber && $streetNumber !== 9999) {
+            $allProperties = array_filter($allProperties, function($property) use ($streetNumber) {
+                return $this->extractStreetNumberFromAddress($property['address']) === $streetNumber;
+            });
+        }
 
         return [
-            'properties' => $properties,
-            'search' => "$street, $city",
-            'count' => count($properties)
+            'properties' => array_values($allProperties),
+            'search' => $search,
+            'count' => count($allProperties)
         ];
+    }
+
+    private function isPostcode($search)
+    {
+        // Regex simples para detectar código postal UK
+        return preg_match('/^[A-Z]{1,2}[0-9]{1,2}[A-Z]?\s*[0-9][A-Z]{2}$|^[A-Z]{1,2}[0-9]{1,2}$/', $search);
+    }
+
+    private function extractStreetNumber($address)
+    {
+        if (preg_match('/^(\d+)/', trim($address), $matches)) {
+            return (int) $matches[1];
+        }
+        return 9999;
+    }
+
+    private function extractStreetNumberFromAddress($address)
+    {
+        if (preg_match('/^(\d+)/', trim($address), $matches)) {
+            return (int) $matches[1];
+        }
+        return 9999;
+    }
+
+    private function extractStreetName($address)
+    {
+        // Remove número do início e cidade do final
+        $address = trim($address);
+
+        // Remove número do início
+        $address = preg_replace('/^\d+\s*/', '', $address);
+
+        // Remove cidade do final (ex: ", LIVERPOOL")
+        $address = preg_replace('/,\s*[A-Z]+\s*$/i', '', $address);
+
+        return strtoupper(trim($address));
+    }
+
+    private function extractCity($address)
+    {
+        // Procura por cidade após vírgula
+        if (preg_match('/,\s*([A-Z]+)\s*$/i', $address, $matches)) {
+            return strtoupper($matches[1]);
+        }
+        return '';
     }
 
     private function formatProperties($items)
@@ -58,36 +163,89 @@ class PropertyService
         $properties = [];
 
         foreach ($items as $item) {
+            if (!isset($item['pricePaid']) || !isset($item['propertyAddress'])) {
+                continue;
+            }
+
+            $address = $item['propertyAddress'];
+            $transactionDate = $item['transactionDate'] ?? '';
+
             $properties[] = [
-                'price' => $item['pricePaid'] ?? 0,
-                'address' => $this->formatAddress($item['propertyAddress'] ?? []),
-                'postcode' => $item['propertyAddress']['postcode'] ?? '',
-                'date' => $this->formatDate($item['transactionDate'] ?? ''),
-                'type' => $this->getPropertyType($item)
+                'price' => (int) $item['pricePaid'],
+                'address' => $this->formatAddress($address),
+                'postcode' => $address['postcode'] ?? 'N/A',
+                'date' => $this->formatDate($transactionDate),
+                'type' => $this->getPropertyType($item),
+                'street_number' => $this->extractStreetNumberFromFullAddress($address),
+                'raw_date' => $transactionDate
             ];
         }
 
-        // Ordena por data (mais recente primeiro)
+        $properties = $this->removeDuplicates($properties);
+
+        // ORDENAÇÃO MELHORADA - Por número da rua e data
         usort($properties, function($a, $b) {
-            return strtotime($b['date']) - strtotime($a['date']);
+            // Primeiro ordena por número da rua (menor para maior)
+            if ($a['street_number'] !== $b['street_number']) {
+                return $a['street_number'] - $b['street_number'];
+            }
+
+            // Se mesmo número, ordena por data (mais recente primeiro)
+            $dateA = strtotime($a['raw_date']);
+            $dateB = strtotime($b['raw_date']);
+
+            if ($dateA !== $dateB) {
+                return $dateB - $dateA; // Mais recente primeiro
+            }
+
+            // Se mesma data, ordena por preço (maior primeiro)
+            return $b['price'] - $a['price'];
         });
 
+        foreach ($properties as &$property) {
+            unset($property['street_number']);
+            unset($property['raw_date']);
+        }
+
         return $properties;
+    }
+
+    private function extractStreetNumberFromFullAddress($address)
+    {
+        $fullAddress = '';
+
+        if (!empty($address['saon'])) $fullAddress .= ' ' . $address['saon'];
+        if (!empty($address['paon'])) $fullAddress .= ' ' . $address['paon'];
+
+        $fullAddress = trim($fullAddress);
+
+        if (preg_match('/^(\d+)/', $fullAddress, $matches)) {
+            return (int) $matches[1];
+        }
+
+        return 9999;
     }
 
     private function formatAddress($address)
     {
         $parts = [];
-        if (!empty($address['saon'])) $parts[] = $address['saon'];
-        if (!empty($address['paon'])) $parts[] = $address['paon'];
-        if (!empty($address['street'])) $parts[] = $address['street'];
-        return implode(' ', $parts);
+        if (!empty($address['saon'])) $parts[] = trim($address['saon']);
+        if (!empty($address['paon'])) $parts[] = trim($address['paon']);
+        if (!empty($address['street'])) $parts[] = trim($address['street']);
+        return implode(' ', array_filter($parts));
     }
 
     private function formatDate($dateString)
     {
-        if (empty($dateString)) return '';
-        return date('d/m/Y', strtotime($dateString));
+        if (empty($dateString)) return 'N/A';
+        try {
+            // Garante que a data seja convertida corretamente
+            $timestamp = strtotime($dateString);
+            if ($timestamp === false) return 'N/A';
+            return date('d/m/Y', $timestamp);
+        } catch (Exception $e) {
+            return 'N/A';
+        }
     }
 
     private function getPropertyType($item)
@@ -96,5 +254,21 @@ class PropertyService
             return ucfirst(str_replace('-', ' ', $item['propertyType']['prefLabel'][0]['_value']));
         }
         return 'Unknown';
+    }
+
+    private function removeDuplicates($properties)
+    {
+        $unique = [];
+        $seen = [];
+
+        foreach ($properties as $property) {
+            $key = $property['address'] . '|' . $property['price'] . '|' . $property['date'];
+            if (!in_array($key, $seen)) {
+                $seen[] = $key;
+                $unique[] = $property;
+            }
+        }
+
+        return $unique;
     }
 }

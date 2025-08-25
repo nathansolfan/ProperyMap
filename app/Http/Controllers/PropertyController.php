@@ -7,13 +7,12 @@ use Illuminate\Http\Request;
 
 class PropertyController extends Controller
 {
-//    public function index()
-//    {
-//        $service = new PropertyService();
-//        $result = $service->getPropertiesByStreet('', 'LONDON'); // Busca geral em Londres
-//
-//        return view('properties.index', $result);
-//    }
+    private $propertyService;
+
+    public function __construct(PropertyService $propertyService)
+    {
+        $this->propertyService = $propertyService;
+    }
 
     public function index()
     {
@@ -24,32 +23,28 @@ class PropertyController extends Controller
         ]);
     }
 
+    // Busca por URL (GET) - ATUALIZADO
     public function search($searchTerm)
     {
-        $service = new PropertyService();
-        $result = $service->getProperties($searchTerm);
-
+        $result = $this->propertyService->getProperties($searchTerm);
         return view('properties.index', $result);
     }
 
+    // Busca por formulário (POST) - ATUALIZADO
     public function searchPost(Request $request)
     {
         $searchTerm = $request->input('search');
-        $service = new PropertyService();
-        $result = $service->getProperties($searchTerm);
-
+        $result = $this->propertyService->getProperties($searchTerm);
         return view('properties.index', $result);
     }
 
+    // Busca por rua (formulário específico)
     public function searchByStreet(Request $request)
     {
         $street = $request->input('street');
         $city = $request->input('city', 'LONDON');
 
-        $service = new PropertyService();
-        $result = $service->getPropertiesByStreet($street, $city);
-
+        $result = $this->propertyService->getPropertiesByStreet($street, $city);
         return view('properties.index', $result);
-
     }
 }

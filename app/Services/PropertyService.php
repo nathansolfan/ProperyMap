@@ -8,19 +8,19 @@ class PropertyService
 {
     private $apiUrl = 'https://landregistry.data.gov.uk/data/ppi/transaction-record.json';
 
-    public function getProperties($search)
+    public function getProperties($search, $sortBy = 'street_number')
     {
         $search = strtoupper(trim($search));
 
         // Verifica se é código postal ou busca geral
         if ($this->isPostcode($search)) {
-            return $this->searchByPostcode($search);
+            return $this->searchByPostcode($search, $sortBy);
         } else {
-            return $this->searchByAddress($search);
+            return $this->searchByAddress($search, $sortBy);
         }
     }
 
-    public function getPropertiesByStreet($street, $city = 'LONDON')
+    public function getPropertiesByStreet($street, $city = 'LONDON', $sortBy = 'street_number')
     {
         // Remove números do início para buscar só a rua
         $cleanStreet = $this->extractStreetName($street);
@@ -32,11 +32,11 @@ class PropertyService
         ]);
 
         if (!$response->successful()) {
-            return ['properties' => [], 'search' => "$street, $city", 'count' => 0];
+            return ['properties' => [], 'search' => "$street, $city", 'count' => 0, 'sortBy' => $sortBy];
         }
 
         $data = $response->json();
-        $allProperties = $this->formatProperties($data['result']['items'] ?? []);
+        $allProperties = $this->formatProperties($data['result']['items'] ?? [], $sortBy);
 
         // Se foi pesquisado um número específico, filtra
         $specificNumber = $this->extractStreetNumber($street);
@@ -49,11 +49,12 @@ class PropertyService
         return [
             'properties' => array_values($allProperties),
             'search' => "$street, $city",
-            'count' => count($allProperties)
+            'count' => count($allProperties),
+            'sortBy' => $sortBy
         ];
     }
 
-    private function searchByPostcode($postcode)
+    private function searchByPostcode($postcode, $sortBy = 'street_number')
     {
         $response = Http::get($this->apiUrl, [
             'propertyAddress.postcode' => $postcode . '*',
@@ -61,20 +62,21 @@ class PropertyService
         ]);
 
         if (!$response->successful()) {
-            return ['properties' => [], 'search' => $postcode, 'count' => 0];
+            return ['properties' => [], 'search' => $postcode, 'count' => 0, 'sortBy' => $sortBy];
         }
 
         $data = $response->json();
-        $properties = $this->formatProperties($data['result']['items'] ?? []);
+        $properties = $this->formatProperties($data['result']['items'] ?? [], $sortBy);
 
         return [
             'properties' => $properties,
             'search' => $postcode,
-            'count' => count($properties)
+            'count' => count($properties),
+            'sortBy' => $sortBy
         ];
     }
 
-    private function searchByAddress($search)
+    private function searchByAddress($search, $sortBy = 'street_number')
     {
         // Tenta extrair número e nome da rua
         $streetNumber = $this->extractStreetNumber($search);
@@ -82,7 +84,7 @@ class PropertyService
         $city = $this->extractCity($search);
 
         if (empty($streetName)) {
-            return ['properties' => [], 'search' => $search, 'count' => 0];
+            return ['properties' => [], 'search' => $search, 'count' => 0, 'sortBy' => $sortBy];
         }
 
         // Busca pela rua
@@ -93,11 +95,11 @@ class PropertyService
         ]);
 
         if (!$response->successful()) {
-            return ['properties' => [], 'search' => $search, 'count' => 0];
+            return ['properties' => [], 'search' => $search, 'count' => 0, 'sortBy' => $sortBy];
         }
 
         $data = $response->json();
-        $allProperties = $this->formatProperties($data['result']['items'] ?? []);
+        $allProperties = $this->formatProperties($data['result']['items'] ?? [], $sortBy);
 
         // Se foi pesquisado um número específico, filtra
         if ($streetNumber && $streetNumber !== 9999) {
@@ -109,7 +111,8 @@ class PropertyService
         return [
             'properties' => array_values($allProperties),
             'search' => $search,
-            'count' => count($allProperties)
+            'count' => count($allProperties),
+            'sortBy' => $sortBy
         ];
     }
 
@@ -158,7 +161,7 @@ class PropertyService
         return '';
     }
 
-    private function formatProperties($items)
+    private function formatProperties($items, $sortBy = 'street_number')
     {
         $properties = [];
 
@@ -183,23 +186,41 @@ class PropertyService
 
         $properties = $this->removeDuplicates($properties);
 
-        // ORDENAÇÃO MELHORADA - Por número da rua e data
-        usort($properties, function($a, $b) {
-            // Primeiro ordena por número da rua (menor para maior)
-            if ($a['street_number'] !== $b['street_number']) {
-                return $a['street_number'] - $b['street_number'];
+        // ORDENAÇÃO flexível baseada no parâmetro sortBy
+        usort($properties, function($a, $b) use ($sortBy) {
+            if ($sortBy === 'date') {
+                // Ordena por data (mais recente primeiro)
+                $dateA = strtotime($a['raw_date']);
+                $dateB = strtotime($b['raw_date']);
+
+                if ($dateA !== $dateB) {
+                    return $dateB - $dateA; // Mais recente primeiro
+                }
+
+                // Se mesma data, ordena por rua
+                if ($a['street_number'] !== $b['street_number']) {
+                    return $a['street_number'] - $b['street_number'];
+                }
+
+                // Se mesma rua e data, ordena por preço (maior primeiro)
+                return $b['price'] - $a['price'];
+            } else {
+                // Comportamento padrão (ordena por número da rua)
+                if ($a['street_number'] !== $b['street_number']) {
+                    return $a['street_number'] - $b['street_number'];
+                }
+
+                // Se mesmo número, ordena por data (mais recente primeiro)
+                $dateA = strtotime($a['raw_date']);
+                $dateB = strtotime($b['raw_date']);
+
+                if ($dateA !== $dateB) {
+                    return $dateB - $dateA; // Mais recente primeiro
+                }
+
+                // Se mesma data, ordena por preço (maior primeiro)
+                return $b['price'] - $a['price'];
             }
-
-            // Se mesmo número, ordena por data (mais recente primeiro)
-            $dateA = strtotime($a['raw_date']);
-            $dateB = strtotime($b['raw_date']);
-
-            if ($dateA !== $dateB) {
-                return $dateB - $dateA; // Mais recente primeiro
-            }
-
-            // Se mesma data, ordena por preço (maior primeiro)
-            return $b['price'] - $a['price'];
         });
 
         foreach ($properties as &$property) {

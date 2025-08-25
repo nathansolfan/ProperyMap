@@ -194,7 +194,7 @@ class PropertyService
             usort($properties, function($a, $b) {
                 // Primeiro critério: data (mais recente primeiro)
                 if ($a['timestamp'] !== $b['timestamp']) {
-                    return $b['timestamp'] - $a['timestamp']; // Mais recente primeiro
+                    return $a['timestamp'] - $b['timestamp']; // Mais antigo primeiro
                 }
 
                 // Segundo critério: número da rua (crescente)

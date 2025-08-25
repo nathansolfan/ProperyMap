@@ -27,8 +27,14 @@ class PropertyController extends Controller
     // Busca por URL (GET) - ATUALIZADO
     public function search($searchTerm, Request $request)
     {
-        $sortBy = $request->query('sort', 'street_number');
+        // Garante que o parâmetro sort seja capturado corretamente
+        $sortBy = $request->input('sort', 'street_number');
+
         $result = $this->propertyService->getProperties($searchTerm, $sortBy);
+
+        // Garante que o parâmetro sort esteja disponível na view
+        $result['sortBy'] = $sortBy;
+
         return view('properties.index', $result);
     }
 
@@ -37,7 +43,12 @@ class PropertyController extends Controller
     {
         $searchTerm = $request->input('search');
         $sortBy = $request->input('sort', 'street_number');
+
         $result = $this->propertyService->getProperties($searchTerm, $sortBy);
+
+        // Garante que o parâmetro sort esteja disponível na view
+        $result['sortBy'] = $sortBy;
+
         return view('properties.index', $result);
     }
 
@@ -49,6 +60,10 @@ class PropertyController extends Controller
         $sortBy = $request->input('sort', 'street_number');
 
         $result = $this->propertyService->getPropertiesByStreet($street, $city, $sortBy);
+
+        // Garante que o parâmetro sort esteja disponível na view
+        $result['sortBy'] = $sortBy;
+
         return view('properties.index', $result);
     }
 }
